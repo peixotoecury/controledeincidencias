@@ -194,6 +194,7 @@ td.mono{font-family:var(--mono);font-size:11px;color:var(--muted);white-space:no
                 <option>Erro de guia sem prejuízo do escritório</option>
                 <option>Baixa indevida de prazo</option>
                 <option>Agenda equipe feita em prazo</option>
+                <option>Erro Deloitte</option>
                 <option value="Outro">Outro…</option>
               </select>
             </div>
@@ -202,8 +203,8 @@ td.mono{font-family:var(--mono);font-size:11px;color:var(--muted);white-space:no
               <input type="text" id="f-tipo-ocorrencia-outro" placeholder="Digite o que seria a mais">
             </div>
             <div class="mc-form-group">
-              <label>Tipo de prazo</label>
-              <select id="f-tipo-prazo">
+              <label>Tipo de prazo <span class="req">*</span></label>
+              <select id="f-tipo-prazo" required>
                 <option value="" disabled selected>Selecione…</option>
                 <option>Recurso Ordinário</option>
                 <option>Audiência</option>
@@ -231,24 +232,24 @@ td.mono{font-family:var(--mono);font-size:11px;color:var(--muted);white-space:no
               <input type="date" id="f-data-ocorrencia" required>
             </div>
             <div class="mc-form-group">
-              <label>Data da identificação do incidente</label>
-              <input type="date" id="f-data-identificacao">
+              <label>Data da identificação do incidente <span class="req">*</span></label>
+              <input type="date" id="f-data-identificacao" required>
             </div>
             <div class="mc-form-group">
-              <label>Data da comunicação aos sócios</label>
-              <input type="date" id="f-data-comunicacao">
+              <label>Data da comunicação aos sócios <span class="req">*</span></label>
+              <input type="date" id="f-data-comunicacao" required>
             </div>
           </div>
           <div class="mc-form-group">
-            <label>Relato sobre a identificação do erro <span class="hint" style="text-transform:none;font-weight:400;">(como foi identificada, não a descrição da ocorrência)</span></label>
-            <textarea id="f-relato-identificacao" rows="2"></textarea>
+            <label>Relato sobre a identificação do erro <span class="req">*</span> <span class="hint" style="text-transform:none;font-weight:400;">(como foi identificada, não a descrição da ocorrência)</span></label>
+            <textarea id="f-relato-identificacao" required rows="2"></textarea>
           </div>
 
           <div class="section-lbl">Classificação</div>
           <div class="mc-form-grid">
             <div class="mc-form-group">
-              <label>Fator contribuinte principal</label>
-              <select id="f-fator-contribuinte">
+              <label>Fator contribuinte principal <span class="req">*</span></label>
+              <select id="f-fator-contribuinte" required>
                 <option value="" disabled selected>Selecione…</option>
                 <option>Erro de cadastro</option>
                 <option>Ausência de dupla checagem</option>
@@ -266,8 +267,8 @@ td.mono{font-family:var(--mono);font-size:11px;color:var(--muted);white-space:no
               </select>
             </div>
             <div class="mc-form-group">
-              <label>Probabilidade de recorrência</label>
-              <select id="f-probabilidade">
+              <label>Probabilidade de recorrência <span class="req">*</span></label>
+              <select id="f-probabilidade" required>
                 <option value="" disabled selected>Selecione…</option>
                 <option>Baixa</option>
                 <option>Média</option>
@@ -275,8 +276,8 @@ td.mono{font-family:var(--mono);font-size:11px;color:var(--muted);white-space:no
               </select>
             </div>
             <div class="mc-form-group">
-              <label>Envolvimento de controladoria/Deloitte</label>
-              <select id="f-envolvimento">
+              <label>Envolvimento de controladoria/Deloitte <span class="req">*</span></label>
+              <select id="f-envolvimento" required>
                 <option value="" disabled selected>Selecione…</option>
                 <option>Deloitte</option>
                 <option>Controladoria</option>
@@ -288,27 +289,32 @@ td.mono{font-family:var(--mono);font-size:11px;color:var(--muted);white-space:no
           <div class="section-lbl">Pessoas e equipe</div>
           <div class="mc-form-grid">
             <div class="mc-form-group">
-              <label>Profissional envolvido</label>
-              <input type="text" id="f-profissional-1">
+              <label>Profissional envolvido <span class="req">*</span></label>
+              <input type="text" id="f-profissional-1" required>
             </div>
             <div class="mc-form-group">
-              <label>Profissional envolvido (2ª pessoa)</label>
-              <input type="text" id="f-profissional-2">
+              <label>Profissional envolvido (2ª pessoa) <span class="req">*</span></label>
+              <input type="text" id="f-profissional-2" required>
             </div>
             <div class="mc-form-group">
-              <label>Equipe</label>
-              <select id="f-equipe">
+              <label>Equipe <span class="req">*</span></label>
+              <select id="f-equipe" required>
                 <option value="" disabled selected>Selecione…</option>
-                <option>Equipe A</option>
-                <option>Equipe B</option>
-                <option>Equipe C</option>
-                <option>Equipe D</option>
-                <option>Equipe E</option>
+                <option>A1</option>
+                <option>A2</option>
+                <option>A3</option>
+                <option>B1</option>
+                <option>B2</option>
+                <option>B3</option>
+                <option>C1</option>
+                <option>D1</option>
+                <option>E1</option>
+                <option>E2</option>
               </select>
             </div>
             <div class="mc-form-group">
-              <label>Grupo</label>
-              <input type="text" id="f-grupo">
+              <label>Grupo <span class="req">*</span></label>
+              <input type="text" id="f-grupo" required>
             </div>
           </div>
           <div class="mc-form-group">
@@ -319,38 +325,38 @@ td.mono{font-family:var(--mono);font-size:11px;color:var(--muted);white-space:no
             </div>
           </div>
           <div class="mc-form-group">
-            <label>Avaliação do profissional em relação à solução</label>
-            <textarea id="f-avaliacao-profissional" rows="2"></textarea>
+            <label>Avaliação do profissional em relação à solução <span class="req">*</span></label>
+            <textarea id="f-avaliacao-profissional" required rows="2"></textarea>
           </div>
 
           <div class="section-lbl">Impacto financeiro</div>
           <div class="mc-form-grid">
             <div class="mc-form-group">
-              <label>Valor do caso (R$)</label>
-              <input type="number" step="0.01" id="f-valor-caso" placeholder="0,00">
+              <label>Valor do caso (R$) <span class="req">*</span></label>
+              <input type="number" step="0.01" id="f-valor-caso" required placeholder="0,00">
             </div>
             <div class="mc-form-group">
-              <label>Valor estimado do prejuízo (R$)</label>
-              <input type="number" step="0.01" id="f-valor-prejuizo" placeholder="0,00">
+              <label>Valor estimado do prejuízo (R$) <span class="req">*</span></label>
+              <input type="number" step="0.01" id="f-valor-prejuizo" required placeholder="0,00">
             </div>
           </div>
 
           <div class="section-lbl">Aprendizado e plano de ação</div>
           <div class="mc-form-group">
-            <label>Lição aprendida</label>
-            <textarea id="f-licao-aprendida" rows="2"></textarea>
+            <label>Lição aprendida <span class="req">*</span></label>
+            <textarea id="f-licao-aprendida" required rows="2"></textarea>
           </div>
           <div class="mc-form-group">
-            <label>Medidas corretivas adotadas ou planejadas</label>
-            <textarea id="f-medidas-corretivas" rows="2"></textarea>
+            <label>Medidas corretivas adotadas ou planejadas <span class="req">*</span></label>
+            <textarea id="f-medidas-corretivas" required rows="2"></textarea>
           </div>
           <div class="mc-form-group">
-            <label>Responsável pelo acompanhamento do Plano de Ação</label>
-            <input type="text" id="f-responsavel-acompanhamento">
+            <label>Responsável pelo acompanhamento do Plano de Ação <span class="req">*</span></label>
+            <input type="text" id="f-responsavel-acompanhamento" required>
           </div>
           <div class="mc-form-group">
-            <label>Sugestões ou comentários</label>
-            <textarea id="f-sugestoes" rows="2"></textarea>
+            <label>Sugestões ou comentários <span class="req">*</span></label>
+            <textarea id="f-sugestoes" required rows="2"></textarea>
           </div>
 
           <button type="submit" class="btn-cyan" id="btn-enviar">Registrar Ocorrência</button>
@@ -378,7 +384,7 @@ td.mono{font-family:var(--mono);font-size:11px;color:var(--muted);white-space:no
         </select>
         <select class="filter-select" id="ft-equipe" onchange="renderLista()">
           <option value="">Todas as equipes</option>
-          <option>Equipe A</option><option>Equipe B</option><option>Equipe C</option><option>Equipe D</option><option>Equipe E</option>
+          <option>A1</option><option>A2</option><option>A3</option><option>B1</option><option>B2</option><option>B3</option><option>C1</option><option>D1</option><option>E1</option><option>E2</option>
         </select>
         <select class="filter-select" id="ft-tipo" onchange="renderLista()">
           <option value="">Todos os tipos</option>
@@ -389,6 +395,7 @@ td.mono{font-family:var(--mono);font-size:11px;color:var(--muted);white-space:no
           <option>Erro de guia sem prejuízo do escritório</option>
           <option>Baixa indevida de prazo</option>
           <option>Agenda equipe feita em prazo</option>
+          <option>Erro Deloitte</option>
         </select>
         <input type="text" class="filter-input" id="ft-busca" placeholder="Buscar por profissional, grupo…" oninput="renderLista()">
         <button class="export-btn" onclick="exportarExcel()">📥 Exportar Excel</button>
