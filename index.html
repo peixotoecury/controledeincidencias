@@ -465,19 +465,15 @@ const EMAIL_POLIANA = 'poliana.banqueri@peixotoecury.com.br';
 const LIMITE_TAMANHO_MAILTO = 1900;
 
 function montarCorpoAlertaIncidencia(p){
-  return 'Nova ocorrência registrada no Controle de Incidências.\n\n' +
-    'Tipo de ocorrência: ' + (p.tipo_ocorrencia||'—') + '\n' +
-    'Gravidade: ' + (p.gravidade||'—') + '\n' +
-    'Probabilidade de recorrência: ' + (p.probabilidade_recorrencia||'—') + '\n' +
-    'Equipe: ' + (p.equipe||'—') + '\n' +
-    'Grupo: ' + (p.grupo||'—') + '\n' +
-    'Profissional envolvido: ' + (p.profissional_envolvido||'—') + (p.profissional_envolvido_2 ? ' / ' + p.profissional_envolvido_2 : '') + '\n' +
-    'Data da ocorrência: ' + fmtData(p.data_ocorrencia) + '\n' +
-    'Valor estimado do prejuízo: ' + (p.valor_prejuizo ? fmtMoeda(p.valor_prejuizo) : '—') + '\n\n' +
-    'Descrição:\n' + (p.descricao||'—') + '\n\n' +
-    'Medidas corretivas adotadas ou planejadas:\n' + (p.medidas_corretivas||'—') + '\n\n' +
-    'Preenchido por: ' + (p.preenchido_por||'—') + '\n\n' +
-    '(Registro completo disponível no Controle de Incidências — LAWgico)';
+  const linhas = ['Nova ocorrência registrada no Controle de Incidências.', ''];
+  CAMPOS_DETALHE.forEach(([campo, label, fmt])=>{
+    let v = p[campo];
+    if(fmt && v!==null && v!==undefined && v!=='') v = fmt(v);
+    linhas.push(label + ': ' + ((v!==null && v!==undefined && v!=='') ? v : '—'));
+  });
+  linhas.push('');
+  linhas.push('(Registro completo disponível no Controle de Incidências — LAWgico)');
+  return linhas.join('\n');
 }
 
 function abrirEmailAlertaIncidencia(p){
