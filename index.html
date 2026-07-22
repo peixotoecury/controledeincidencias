@@ -472,7 +472,8 @@ function montarCorpoAlertaIncidencia(p){
     linhas.push(label + ': ' + ((v!==null && v!==undefined && v!=='') ? v : '—'));
   });
   linhas.push('');
-  linhas.push('(Registro completo disponível no Controle de Incidências — LAWgico)');
+  linhas.push('Atenciosamente,');
+  linhas.push(p.preenchido_por || '—');
   return linhas.join('\n');
 }
 
