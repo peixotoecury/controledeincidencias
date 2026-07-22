@@ -194,7 +194,12 @@ td.mono{font-family:var(--mono);font-size:11px;color:var(--muted);white-space:no
                 <option>Erro de guia sem prejuízo do escritório</option>
                 <option>Baixa indevida de prazo</option>
                 <option>Agenda equipe feita em prazo</option>
+                <option value="Outro">Outro…</option>
               </select>
+            </div>
+            <div class="mc-form-group" id="wrap-tipo-ocorrencia-outro" style="display:none;">
+              <label>Descreva o tipo de ocorrência <span class="req">*</span></label>
+              <input type="text" id="f-tipo-ocorrencia-outro" placeholder="Digite o que seria a mais">
             </div>
             <div class="mc-form-group">
               <label>Tipo de prazo</label>
@@ -475,14 +480,23 @@ function abrirEmailAlertaIncidencia(p){
   window.location.href = mailto;
 }
 
+document.getElementById('f-tipo-ocorrencia').addEventListener('change', (ev)=>{
+  document.getElementById('wrap-tipo-ocorrencia-outro').style.display = ev.target.value==='Outro' ? '' : 'none';
+});
+
 document.getElementById('form-incidencia').addEventListener('submit', async (ev)=>{
   ev.preventDefault();
   const btn = document.getElementById('btn-enviar');
+  const tipoSel = document.getElementById('f-tipo-ocorrencia').value;
+  if(tipoSel==='Outro' && !document.getElementById('f-tipo-ocorrencia-outro').value.trim()){
+    document.getElementById('f-tipo-ocorrencia-outro').focus();
+    return;
+  }
   btn.disabled = true; btn.textContent = 'Enviando…';
 
   const payload = {
     preenchido_por: document.getElementById('f-preenchido-por').value.trim(),
-    tipo_ocorrencia: document.getElementById('f-tipo-ocorrencia').value,
+    tipo_ocorrencia: tipoSel==='Outro' ? document.getElementById('f-tipo-ocorrencia-outro').value.trim() : tipoSel,
     tipo_prazo: document.getElementById('f-tipo-prazo').value || null,
     data_ocorrencia: document.getElementById('f-data-ocorrencia').value || null,
     descricao: document.getElementById('f-descricao').value.trim(),
@@ -518,6 +532,7 @@ document.getElementById('form-incidencia').addEventListener('submit', async (ev)
   }
   document.getElementById('erro-conexao').innerHTML = '';
   ev.target.reset();
+  document.getElementById('wrap-tipo-ocorrencia-outro').style.display = 'none';
   document.querySelector('input[name="f-compartilhado"][value="Não"]').checked = true;
   toast('✅ Ocorrência registrada — abrindo e-mail para a Poliana…');
   abrirEmailAlertaIncidencia(payload);
