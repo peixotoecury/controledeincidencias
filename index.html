@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Controle de Incidências — LAWgico</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+/* Padrão P&C Claro — mesma paleta do Controle de Inserção de Cálculos */
+:root {
+  --azul-pc:  #00A9E0;
+  --escuro-pc:#003B5C;
+  --preto-pc: #2D2926;
+  --bg:       #F4F9FC;
+  --surface:  #FFFFFF;
+  --surface2: #F7FCFF;
+  --border2:  #D8E7F0;
+  --text:     #2D2926;
+  --muted:    #5F7E92;
+  --muted2:   #7E98AA;
+  --red:      #C0392B;
+  --red-lt:   rgba(192,57,43,.10);
+  --orange:   #B85C00;
+  --orange-lt:rgba(230,126,34,.10);
+  --green:    #117A65;
+  --green-lt: rgba(17,122,101,.10);
+  --shadow-pc:0 8px 22px rgba(0,59,92,.08);
+  --font:     'Sora', sans-serif;
+  --mono:     'IBM Plex Mono', monospace;
+  --radius:   8px;
+  --radius-lg:12px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;overflow-x:hidden;}
+body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:13px;line-height:1.5;-webkit-font-smoothing:antialiased;}
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:rgba(0,169,224,.25);border-radius:4px;}
+
+.topbar{background:linear-gradient(90deg,var(--escuro-pc),#00557B 72%,var(--azul-pc));border-bottom:4px solid var(--azul-pc);box-shadow:var(--shadow-pc);padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;position:sticky;top:0;z-index:100;}
+.topbar-left{display:flex;align-items:center;gap:16px;}
+.tb-lawgico{display:inline-block;line-height:1;position:relative;}
+.tb-law{font-size:18px;font-weight:800;color:#fff;font-family:'Sora',sans-serif;letter-spacing:-.5px;}
+.tb-gico{font-size:18px;font-weight:300;color:#fff;font-family:'Sora',sans-serif;letter-spacing:-.5px;}
+.tb-modulo{font-size:9px;font-weight:300;color:rgba(255,255,255,.75);font-family:'Sora',sans-serif;position:absolute;top:-5px;right:0;white-space:nowrap;}
+.tb-tagline{font-size:7.5px;font-weight:300;letter-spacing:3px;color:rgba(255,255,255,.65);font-family:'Sora',sans-serif;margin-top:1px;}
+.topbar-divider{width:1px;height:28px;background:rgba(255,255,255,.25);}
+.topbar-title{font-size:13px;font-weight:600;color:rgba(255,255,255,.85);}
+.topbar-right{display:flex;align-items:center;gap:10px;}
+.logout-btn{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.38);color:#fff;border-radius:var(--radius);padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;font-family:var(--font);text-decoration:none;display:inline-flex;align-items:center;gap:6px;}
+.logout-btn:hover{background:rgba(255,255,255,.22);}
+
+.tab-bar{background:var(--surface);border-bottom:1px solid var(--border2);padding:0 24px;display:flex;gap:4px;box-shadow:0 2px 10px rgba(0,59,92,.05);}
+.tab-btn{background:none;border:none;padding:14px 18px;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;font-family:var(--font);border-bottom:3px solid transparent;transition:all .15s;}
+.tab-btn:hover{color:var(--escuro-pc);}
+.tab-btn.active{color:var(--escuro-pc);border-bottom-color:var(--azul-pc);}
+
+.main{max-width:1440px;margin:0 auto;padding:22px 24px 60px;}
+
+.kpi-row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px;}
+.kpi-card{display:flex;align-items:center;gap:14px;background:var(--surface);border:1px solid var(--border2);box-shadow:var(--shadow-pc);border-radius:var(--radius-lg);padding:16px 20px;flex:1;min-width:170px;position:relative;overflow:hidden;transition:transform .2s;}
+.kpi-card:hover{transform:translateY(-2px);}
+.kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;}
+.kpi-total::before{background:linear-gradient(90deg,var(--azul-pc),#006080);}
+.kpi-red::before{background:linear-gradient(90deg,var(--red),#8B1D1D);}
+.kpi-orange::before{background:linear-gradient(90deg,#E67E22,#B85C00);}
+.kpi-green::before{background:linear-gradient(90deg,var(--green),#0c5c4c);}
+.kpi-icon{font-size:22px;flex-shrink:0;}
+.kpi-val{font-size:28px;font-weight:700;color:var(--escuro-pc);line-height:1;font-variant-numeric:tabular-nums;font-family:var(--mono);}
+.kpi-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-top:3px;font-weight:600;}
+
+.grid-main{display:grid;grid-template-columns:420px 1fr;gap:18px;align-items:start;}
+@media (max-width: 1000px){ .grid-main{grid-template-columns:1fr;} }
+
+.dash-card{background:var(--surface);border:1px solid var(--border2);box-shadow:var(--shadow-pc);border-radius:var(--radius-lg);overflow:hidden;}
+.dash-card-head{padding:16px 20px;border-bottom:1px solid var(--border2);background:var(--surface2);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--escuro-pc);display:flex;align-items:center;gap:8px;justify-content:space-between;}
+.dash-card-body{padding:20px;}
+
+.mc-form-group{display:flex;flex-direction:column;gap:5px;margin-bottom:14px;}
+.mc-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 16px;}
+@media (max-width: 700px){ .mc-form-grid{grid-template-columns:1fr;} }
+.mc-form-group label{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;}
+.mc-form-group label .req{color:var(--red);}
+.mc-form-group input,.mc-form-group select,.mc-form-group textarea{
+  background:#fff;border:1px solid #BFD6E4;border-radius:var(--radius);padding:9px 12px;color:var(--preto-pc);font-size:13px;font-family:var(--font);outline:none;transition:border .2s;width:100%;resize:vertical;
+}
+.mc-form-group input:focus,.mc-form-group select:focus,.mc-form-group textarea:focus{border-color:var(--azul-pc);box-shadow:0 0 0 3px rgba(0,169,224,.14);}
+.mc-form-group input::placeholder,.mc-form-group textarea::placeholder{color:var(--muted2);}
+.hint{font-size:10.5px;color:var(--muted2);margin-top:2px;}
+.section-lbl{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:var(--azul-pc);margin:18px 0 6px;padding-top:10px;border-top:1px solid var(--border2);}
+.section-lbl:first-child{margin-top:0;padding-top:0;border-top:none;}
+
+.radio-row{display:flex;gap:16px;padding:9px 12px;background:#fff;border:1px solid #BFD6E4;border-radius:var(--radius);}
+.radio-row label{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:400;text-transform:none;color:var(--preto-pc);}
+
+.btn-cyan{background:var(--escuro-pc);color:#fff;border:none;border-radius:var(--radius);padding:11px 18px;font-size:13px;font-weight:700;cursor:pointer;transition:all .2s;font-family:var(--font);width:100%;letter-spacing:.2px;}
+.btn-cyan:hover{background:#00557B;transform:translateY(-1px);box-shadow:0 4px 16px rgba(0,59,92,.25);}
+.btn-cyan:disabled{opacity:.5;cursor:not-allowed;transform:none;}
+
+.export-btn{background:var(--green);color:#fff;border:none;border-radius:var(--radius);padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;font-family:var(--font);display:flex;align-items:center;gap:6px;white-space:nowrap;}
+.export-btn:hover{background:#0c5c4c;transform:translateY(-1px);box-shadow:0 4px 14px rgba(17,122,101,.3);}
+
+.action-btn{background:rgba(0,169,224,.10);border:1px solid rgba(0,169,224,.3);color:var(--escuro-pc);border-radius:var(--radius);padding:5px 12px;font-size:11px;font-weight:600;cursor:pointer;transition:all .2s;font-family:var(--font);white-space:nowrap;}
+.action-btn:hover{background:rgba(0,169,224,.2);}
+
+.filters{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:14px 20px;border-bottom:1px solid var(--border2);background:var(--surface2);}
+.filter-select,.filter-input{background:#fff;border:1px solid #BFD6E4;border-radius:var(--radius);padding:8px 12px;color:var(--preto-pc);font-size:12px;font-family:var(--font);outline:none;transition:border .2s;}
+.filter-select:focus,.filter-input:focus{border-color:var(--azul-pc);box-shadow:0 0 0 3px rgba(0,169,224,.14);}
+.filter-input{flex:1;min-width:200px;}
+.filter-input::placeholder{color:var(--muted2);}
+
+.table-wrap{overflow-x:auto;}
+table.sol-table{width:100%;border-collapse:collapse;min-width:1150px;background:#fff;}
+table.sol-table thead th{position:sticky;top:0;background:var(--escuro-pc);color:#fff;padding:10px 12px;text-transform:uppercase;font-size:10px;letter-spacing:.6px;text-align:left;white-space:nowrap;}
+table.sol-table tbody td{padding:10px 12px;border-bottom:1px solid #E5EEF4;color:var(--preto-pc);font-size:12px;vertical-align:middle;}
+table.sol-table tbody tr:hover td{background:#F8FCFF;}
+td.mono{font-family:var(--mono);font-size:11px;color:var(--muted);white-space:nowrap;}
+
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap;border:1px solid transparent;}
+.badge-nao{background:#F1F5F8;color:var(--muted);border-color:var(--border2);}
+.badge-red{background:var(--red-lt);color:var(--red);border-color:rgba(192,57,43,.25);}
+.badge-orange{background:var(--orange-lt);color:var(--orange);border-color:rgba(230,126,34,.25);}
+.badge-green{background:var(--green-lt);color:var(--green);border-color:rgba(17,122,101,.25);}
+.badge-blue{background:rgba(0,169,224,.10);color:var(--escuro-pc);border-color:rgba(0,169,224,.3);}
+
+.empty-state{padding:48px 16px;text-align:center;color:var(--muted);font-size:13px;}
+.error-banner{background:var(--red-lt);border:1px solid rgba(192,57,43,.3);color:var(--red);border-radius:var(--radius);padding:14px 18px;margin-bottom:18px;font-size:12px;line-height:1.6;}
+.error-banner code{background:rgba(0,0,0,.06);padding:1px 6px;border-radius:4px;font-family:var(--mono);color:var(--preto-pc);}
+
+.toast{position:fixed;bottom:22px;right:22px;background:var(--escuro-pc);color:#fff;padding:13px 20px;border-radius:var(--radius);box-shadow:0 8px 26px rgba(0,59,92,.35);font-size:13px;font-weight:600;z-index:999;opacity:0;transform:translateY(12px);transition:all .25s;}
+.toast.show{opacity:1;transform:translateY(0);}
+
+.modal-bg{position:fixed;inset:0;background:rgba(0,30,45,.55);display:none;align-items:center;justify-content:center;z-index:500;padding:20px;}
+.modal-bg.show{display:flex;}
+.modal-box{background:#fff;border-radius:var(--radius-lg);max-width:640px;width:100%;max-height:85vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3);}
+.modal-head{padding:16px 22px;border-bottom:1px solid var(--border2);display:flex;justify-content:space-between;align-items:center;background:var(--surface2);}
+.modal-head b{color:var(--escuro-pc);font-size:14px;}
+.modal-close{background:none;border:none;font-size:20px;color:var(--muted);cursor:pointer;}
+.modal-body{padding:20px 22px;}
+.detail-row{display:flex;padding:8px 0;border-bottom:1px solid #EEF4F8;gap:14px;}
+.detail-row .dl{width:230px;flex-shrink:0;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;}
+.detail-row .dv{flex:1;color:var(--preto-pc);white-space:pre-wrap;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="topbar-logo">
+      <div class="tb-lawgico"><span class="tb-law">LAW</span><span class="tb-gico">gico</span><span class="tb-modulo">incidências</span></div>
+      <div class="tb-tagline">lawyers at work</div>
+    </div>
+    <div class="topbar-divider"></div>
+    <div class="topbar-title">Controle de Incidências</div>
+  </div>
+  <div class="topbar-right">
+    <a class="logout-btn" href="../LAWgico_Hub.html">← Hub</a>
+  </div>
+</div>
+
+<div class="tab-bar">
+  <button class="tab-btn active" id="tab-btn-nova" onclick="mudarAba('nova')">📝 Nova Ocorrência</button>
+  <button class="tab-btn" id="tab-btn-lista" onclick="mudarAba('lista')">📋 Ocorrências</button>
+</div>
+
+<div class="main">
+  <div id="erro-conexao"></div>
+
+  <!-- ══════════ ABA NOVA OCORRÊNCIA ══════════ -->
+  <div id="view-nova">
+    <div class="dash-card" style="max-width:760px;margin:0 auto;">
+      <div class="dash-card-head">📝 Registrar Ocorrência</div>
+      <div class="dash-card-body">
+        <form id="form-incidencia">
+
+          <div class="mc-form-group">
+            <label>Preenchido por <span class="req">*</span></label>
+            <input type="text" id="f-preenchido-por" required placeholder="Seu nome">
+          </div>
+
+          <div class="section-lbl">Ocorrência</div>
+          <div class="mc-form-grid">
+            <div class="mc-form-group">
+              <label>Tipo de ocorrência <span class="req">*</span></label>
+              <select id="f-tipo-ocorrencia" required>
+                <option value="" disabled selected>Selecione…</option>
+                <option>Perda de prazo ou audiência</option>
+                <option>Incidente resolvido</option>
+                <option>Erro processual</option>
+                <option>Erro de guia com prejuízo do escritório</option>
+                <option>Erro de guia sem prejuízo do escritório</option>
+              </select>
+            </div>
+            <div class="mc-form-group">
+              <label>Tipo de prazo</label>
+              <select id="f-tipo-prazo">
+                <option value="" disabled selected>Selecione…</option>
+                <option>Recurso Ordinário</option>
+                <option>Audiência</option>
+                <option>Recurso de Revista</option>
+                <option>Contestação</option>
+                <option>Contrarrazões</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="mc-form-group">
+            <label>Descrição detalhada da ocorrência <span class="req">*</span></label>
+            <textarea id="f-descricao" required rows="3" placeholder="Descreva o ocorrido de forma clara e objetiva"></textarea>
+          </div>
+
+          <div class="section-lbl">Linha do tempo</div>
+          <div class="mc-form-grid">
+            <div class="mc-form-group">
+              <label>Data da ocorrência <span class="req">*</span></label>
+              <input type="date" id="f-data-ocorrencia" required>
+            </div>
+            <div class="mc-form-group">
+              <label>Data da identificação do incidente</label>
+              <input type="date" id="f-data-identificacao">
+            </div>
+            <div class="mc-form-group">
+              <label>Data da comunicação aos sócios</label>
+              <input type="date" id="f-data-comunicacao">
+            </div>
+          </div>
+          <div class="mc-form-group">
+            <label>Relato sobre a identificação do erro <span class="hint" style="text-transform:none;font-weight:400;">(como foi identificada, não a descrição da ocorrência)</span></label>
+            <textarea id="f-relato-identificacao" rows="2"></textarea>
+          </div>
+
+          <div class="section-lbl">Classificação</div>
+          <div class="mc-form-grid">
+            <div class="mc-form-group">
+              <label>Fator contribuinte principal</label>
+              <select id="f-fator-contribuinte">
+                <option value="" disabled selected>Selecione…</option>
+                <option>Erro de cadastro</option>
+                <option>Ausência de dupla checagem</option>
+                <option>Comunicação falha</option>
+              </select>
+            </div>
+            <div class="mc-form-group">
+              <label>Gravidade do incidente <span class="req">*</span></label>
+              <select id="f-gravidade" required>
+                <option value="" disabled selected>Selecione…</option>
+                <option>Baixa</option>
+                <option>Média</option>
+                <option>Alta</option>
+                <option>Crítica</option>
+              </select>
+            </div>
+            <div class="mc-form-group">
+              <label>Probabilidade de recorrência</label>
+              <select id="f-probabilidade">
+                <option value="" disabled selected>Selecione…</option>
+                <option>Baixa</option>
+                <option>Média</option>
+                <option>Alta</option>
+              </select>
+            </div>
+            <div class="mc-form-group">
+              <label>Envolvimento de controladoria/Deloitte</label>
+              <select id="f-envolvimento">
+                <option value="" disabled selected>Selecione…</option>
+                <option>Deloitte</option>
+                <option>Controladoria</option>
+                <option>Não aplicável</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="section-lbl">Pessoas e equipe</div>
+          <div class="mc-form-grid">
+            <div class="mc-form-group">
+              <label>Profissional envolvido</label>
+              <input type="text" id="f-profissional-1">
+            </div>
+            <div class="mc-form-group">
+              <label>Profissional envolvido (2ª pessoa)</label>
+              <input type="text" id="f-profissional-2">
+            </div>
+            <div class="mc-form-group">
+              <label>Equipe</label>
+              <select id="f-equipe">
+                <option value="" disabled selected>Selecione…</option>
+                <option>Equipe A</option>
+                <option>Equipe B</option>
+                <option>Equipe C</option>
+                <option>Equipe D</option>
+                <option>Equipe E</option>
+              </select>
+            </div>
+            <div class="mc-form-group">
+              <label>Grupo</label>
+              <input type="text" id="f-grupo">
+            </div>
+          </div>
+          <div class="mc-form-group">
+            <label>Erro compartilhado entre profissionais?</label>
+            <div class="radio-row">
+              <label><input type="radio" name="f-compartilhado" value="Sim"> Sim</label>
+              <label><input type="radio" name="f-compartilhado" value="Não" checked> Não</label>
+            </div>
+          </div>
+          <div class="mc-form-group">
+            <label>Avaliação do profissional em relação à solução</label>
+            <textarea id="f-avaliacao-profissional" rows="2"></textarea>
+          </div>
+
+          <div class="section-lbl">Impacto financeiro</div>
+          <div class="mc-form-grid">
+            <div class="mc-form-group">
+              <label>Valor do caso (R$)</label>
+              <input type="number" step="0.01" id="f-valor-caso" placeholder="0,00">
+            </div>
+            <div class="mc-form-group">
+              <label>Valor estimado do prejuízo (R$)</label>
+              <input type="number" step="0.01" id="f-valor-prejuizo" placeholder="0,00">
+            </div>
+          </div>
+
+          <div class="section-lbl">Aprendizado e plano de ação</div>
+          <div class="mc-form-group">
+            <label>Lição aprendida</label>
+            <textarea id="f-licao-aprendida" rows="2"></textarea>
+          </div>
+          <div class="mc-form-group">
+            <label>Medidas corretivas adotadas ou planejadas</label>
+            <textarea id="f-medidas-corretivas" rows="2"></textarea>
+          </div>
+          <div class="mc-form-group">
+            <label>Responsável pelo acompanhamento do Plano de Ação</label>
+            <input type="text" id="f-responsavel-acompanhamento">
+          </div>
+          <div class="mc-form-group">
+            <label>Sugestões ou comentários</label>
+            <textarea id="f-sugestoes" rows="2"></textarea>
+          </div>
+
+          <button type="submit" class="btn-cyan" id="btn-enviar">Registrar Ocorrência</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ ABA LISTA / DASHBOARD ══════════ -->
+  <div id="view-lista" style="display:none;">
+
+    <div class="kpi-row">
+      <div class="kpi-card kpi-total"><div class="kpi-icon">📋</div><div><div class="kpi-val" id="k-total">0</div><div class="kpi-label">Total de ocorrências</div></div></div>
+      <div class="kpi-card kpi-red"><div class="kpi-icon">🔴</div><div><div class="kpi-val" id="k-criticas">0</div><div class="kpi-label">Gravidade crítica</div></div></div>
+      <div class="kpi-card kpi-orange"><div class="kpi-icon">⚠️</div><div><div class="kpi-val" id="k-altas">0</div><div class="kpi-label">Gravidade alta</div></div></div>
+      <div class="kpi-card kpi-orange"><div class="kpi-icon">🔁</div><div><div class="kpi-val" id="k-recorrencia">0</div><div class="kpi-label">Recorrência alta</div></div></div>
+      <div class="kpi-card kpi-green"><div class="kpi-icon">💰</div><div><div class="kpi-val" id="k-prejuizo">R$ 0</div><div class="kpi-label">Prejuízo total estimado</div></div></div>
+    </div>
+
+    <div class="dash-card">
+      <div class="filters">
+        <select class="filter-select" id="ft-gravidade" onchange="renderLista()">
+          <option value="">Todas as gravidades</option>
+          <option>Baixa</option><option>Média</option><option>Alta</option><option>Crítica</option>
+        </select>
+        <select class="filter-select" id="ft-equipe" onchange="renderLista()">
+          <option value="">Todas as equipes</option>
+          <option>Equipe A</option><option>Equipe B</option><option>Equipe C</option><option>Equipe D</option><option>Equipe E</option>
+        </select>
+        <select class="filter-select" id="ft-tipo" onchange="renderLista()">
+          <option value="">Todos os tipos</option>
+          <option>Perda de prazo ou audiência</option>
+          <option>Incidente resolvido</option>
+          <option>Erro processual</option>
+          <option>Erro de guia com prejuízo do escritório</option>
+          <option>Erro de guia sem prejuízo do escritório</option>
+        </select>
+        <input type="text" class="filter-input" id="ft-busca" placeholder="Buscar por profissional, grupo…" oninput="renderLista()">
+        <button class="export-btn" onclick="exportarExcel()">📥 Exportar Excel</button>
+      </div>
+      <div class="table-wrap">
+        <table class="sol-table">
+          <thead>
+            <tr>
+              <th>Data</th><th>Tipo</th><th>Gravidade</th><th>Equipe</th><th>Profissional</th>
+              <th>Grupo</th><th>Prejuízo (R$)</th><th>Notificação Poliana</th><th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="body-lista"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="modal-detalhe">
+  <div class="modal-box">
+    <div class="modal-head"><b>Detalhe da Ocorrência</b><button class="modal-close" onclick="fecharModal()">✕</button></div>
+    <div class="modal-body" id="modal-body-detalhe"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SUPABASE_URL = 'https://sydamnqagkdmczmgkvso.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_kA_IDYtEdATSygg7EajrdQ_cEi4d57N';
+const TABLE = 'controle_incidencias';
+
+let sbClient = null;
+function getClient(){
+  if(!sbClient) sbClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  return sbClient;
+}
+
+let OCORRENCIAS = [];
+
+function mudarAba(aba){
+  document.getElementById('view-nova').style.display  = aba==='nova'  ? '' : 'none';
+  document.getElementById('view-lista').style.display  = aba==='lista' ? '' : 'none';
+  document.getElementById('tab-btn-nova').classList.toggle('active', aba==='nova');
+  document.getElementById('tab-btn-lista').classList.toggle('active', aba==='lista');
+  if(aba==='lista') carregar();
+}
+
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 3200);
+}
+
+function e(v){ return (v===null||v===undefined) ? '' : String(v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function fmtMoeda(v){ return 'R$ ' + (Number(v)||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function fmtData(iso){ if(!iso) return '—'; const [a,m,d]=iso.split('-'); return `${d}/${m}/${a}`; }
+
+function badgeGravidade(g){
+  const map = {'Baixa':'badge-green','Média':'badge-blue','Alta':'badge-orange','Crítica':'badge-red'};
+  return `<span class="badge ${map[g]||'badge-nao'}">${e(g||'—')}</span>`;
+}
+
+const EMAIL_POLIANA = 'poliana.banqueri@peixotoecury.com.br';
+const LIMITE_TAMANHO_MAILTO = 1900;
+
+function montarCorpoAlertaIncidencia(p){
+  return 'Nova ocorrência registrada no Controle de Incidências.\n\n' +
+    'Tipo de ocorrência: ' + (p.tipo_ocorrencia||'—') + '\n' +
+    'Gravidade: ' + (p.gravidade||'—') + '\n' +
+    'Probabilidade de recorrência: ' + (p.probabilidade_recorrencia||'—') + '\n' +
+    'Equipe: ' + (p.equipe||'—') + '\n' +
+    'Grupo: ' + (p.grupo||'—') + '\n' +
+    'Profissional envolvido: ' + (p.profissional_envolvido||'—') + (p.profissional_envolvido_2 ? ' / ' + p.profissional_envolvido_2 : '') + '\n' +
+    'Data da ocorrência: ' + fmtData(p.data_ocorrencia) + '\n' +
+    'Valor estimado do prejuízo: ' + (p.valor_prejuizo ? fmtMoeda(p.valor_prejuizo) : '—') + '\n\n' +
+    'Descrição:\n' + (p.descricao||'—') + '\n\n' +
+    'Medidas corretivas adotadas ou planejadas:\n' + (p.medidas_corretivas||'—') + '\n\n' +
+    'Preenchido por: ' + (p.preenchido_por||'—') + '\n\n' +
+    '(Registro completo disponível no Controle de Incidências — LAWgico)';
+}
+
+function abrirEmailAlertaIncidencia(p){
+  const assunto = '🚨 Incidência registrada — ' + (p.gravidade||'') + ' — ' + (p.tipo_ocorrencia||'');
+  const corpo = montarCorpoAlertaIncidencia(p);
+  let mailto = 'mailto:' + EMAIL_POLIANA + '?subject=' + encodeURIComponent(assunto) + '&body=' + encodeURIComponent(corpo);
+  if(mailto.length > LIMITE_TAMANHO_MAILTO){
+    navigator.clipboard?.writeText(corpo).catch(function(){});
+    mailto = 'mailto:' + EMAIL_POLIANA + '?subject=' + encodeURIComponent(assunto);
+    alert('📋 E-mail muito grande: texto completo copiado para a área de transferência — cole no corpo do e-mail (Ctrl+V).');
+  }
+  window.location.href = mailto;
+}
+
+document.getElementById('form-incidencia').addEventListener('submit', async (ev)=>{
+  ev.preventDefault();
+  const btn = document.getElementById('btn-enviar');
+  btn.disabled = true; btn.textContent = 'Enviando…';
+
+  const payload = {
+    preenchido_por: document.getElementById('f-preenchido-por').value.trim(),
+    tipo_ocorrencia: document.getElementById('f-tipo-ocorrencia').value,
+    tipo_prazo: document.getElementById('f-tipo-prazo').value || null,
+    data_ocorrencia: document.getElementById('f-data-ocorrencia').value || null,
+    descricao: document.getElementById('f-descricao').value.trim(),
+    data_identificacao: document.getElementById('f-data-identificacao').value || null,
+    data_comunicacao_socios: document.getElementById('f-data-comunicacao').value || null,
+    relato_identificacao: document.getElementById('f-relato-identificacao').value.trim() || null,
+    fator_contribuinte: document.getElementById('f-fator-contribuinte').value || null,
+    gravidade: document.getElementById('f-gravidade').value,
+    probabilidade_recorrencia: document.getElementById('f-probabilidade').value || null,
+    profissional_envolvido: document.getElementById('f-profissional-1').value.trim() || null,
+    profissional_envolvido_2: document.getElementById('f-profissional-2').value.trim() || null,
+    erro_compartilhado: document.querySelector('input[name="f-compartilhado"]:checked').value,
+    envolvimento_controladoria_deloitte: document.getElementById('f-envolvimento').value || null,
+    equipe: document.getElementById('f-equipe').value || null,
+    grupo: document.getElementById('f-grupo').value.trim() || null,
+    avaliacao_profissional: document.getElementById('f-avaliacao-profissional').value.trim() || null,
+    valor_caso: document.getElementById('f-valor-caso').value || null,
+    valor_prejuizo: document.getElementById('f-valor-prejuizo').value || null,
+    licao_aprendida: document.getElementById('f-licao-aprendida').value.trim() || null,
+    medidas_corretivas: document.getElementById('f-medidas-corretivas').value.trim() || null,
+    responsavel_acompanhamento: document.getElementById('f-responsavel-acompanhamento').value.trim() || null,
+    sugestoes: document.getElementById('f-sugestoes').value.trim() || null,
+    notificado_poliana: false,
+  };
+
+  const { data: inserida, error } = await getClient().from(TABLE).insert([payload]).select().single();
+  btn.disabled = false; btn.textContent = 'Registrar Ocorrência';
+
+  if(error){
+    document.getElementById('erro-conexao').innerHTML =
+      `<div class="error-banner"><strong>Erro ao salvar:</strong> ${e(error.message)} <br><code>${e(JSON.stringify(error))}</code></div>`;
+    return;
+  }
+  document.getElementById('erro-conexao').innerHTML = '';
+  ev.target.reset();
+  document.querySelector('input[name="f-compartilhado"][value="Não"]').checked = true;
+  toast('✅ Ocorrência registrada — abrindo e-mail para a Poliana…');
+  abrirEmailAlertaIncidencia(payload);
+  if(inserida?.id){
+    getClient().from(TABLE).update({notificado_poliana:true}).eq('id', inserida.id).then(()=>{});
+  }
+  mudarAba('lista');
+});
+
+async function carregar(){
+  const { data, error } = await getClient().from(TABLE).select('*').order('criado_em', {ascending:false});
+  if(error){
+    document.getElementById('erro-conexao').innerHTML =
+      `<div class="error-banner"><strong>Erro ao carregar:</strong> ${e(error.message)}</div>`;
+    return;
+  }
+  OCORRENCIAS = data || [];
+  renderLista();
+}
+
+function renderLista(){
+  const fg = document.getElementById('ft-gravidade').value;
+  const fe = document.getElementById('ft-equipe').value;
+  const ftipo = document.getElementById('ft-tipo').value;
+  const busca = (document.getElementById('ft-busca').value||'').toLowerCase();
+
+  let dados = OCORRENCIAS.filter(r=>{
+    if(fg && r.gravidade!==fg) return false;
+    if(fe && r.equipe!==fe) return false;
+    if(ftipo && r.tipo_ocorrencia!==ftipo) return false;
+    if(busca && ![r.profissional_envolvido,r.profissional_envolvido_2,r.grupo].join(' ').toLowerCase().includes(busca)) return false;
+    return true;
+  });
+
+  document.getElementById('k-total').textContent = OCORRENCIAS.length;
+  document.getElementById('k-criticas').textContent = OCORRENCIAS.filter(r=>r.gravidade==='Crítica').length;
+  document.getElementById('k-altas').textContent = OCORRENCIAS.filter(r=>r.gravidade==='Alta').length;
+  document.getElementById('k-recorrencia').textContent = OCORRENCIAS.filter(r=>r.probabilidade_recorrencia==='Alta').length;
+  document.getElementById('k-prejuizo').textContent = fmtMoeda(OCORRENCIAS.reduce((s,r)=>s+(Number(r.valor_prejuizo)||0),0));
+
+  document.getElementById('body-lista').innerHTML = dados.length ? dados.map(r=>`
+    <tr>
+      <td class="mono">${fmtData(r.data_ocorrencia)}</td>
+      <td>${e(r.tipo_ocorrencia)}</td>
+      <td>${badgeGravidade(r.gravidade)}</td>
+      <td>${e(r.equipe||'—')}</td>
+      <td>${e(r.profissional_envolvido||'—')}</td>
+      <td>${e(r.grupo||'—')}</td>
+      <td class="mono">${r.valor_prejuizo ? fmtMoeda(r.valor_prejuizo) : '—'}</td>
+      <td>${r.notificado_poliana ? '<span class="badge badge-green">✅ Enviada</span>' : '<span class="badge badge-orange">⏳ Pendente</span>'}</td>
+      <td><button class="action-btn" onclick="verDetalhe(${r.id})">Ver detalhes</button></td>
+    </tr>
+  `).join('') : `<tr><td colspan="9"><div class="empty-state">Nenhuma ocorrência encontrada.</div></td></tr>`;
+}
+
+const CAMPOS_DETALHE = [
+  ['preenchido_por','Preenchido por'],
+  ['tipo_ocorrencia','Tipo de ocorrência'],
+  ['tipo_prazo','Tipo de prazo'],
+  ['data_ocorrencia','Data da ocorrência',fmtData],
+  ['descricao','Descrição detalhada'],
+  ['data_identificacao','Data da identificação',fmtData],
+  ['data_comunicacao_socios','Data da comunicação aos sócios',fmtData],
+  ['relato_identificacao','Relato da identificação'],
+  ['fator_contribuinte','Fator contribuinte principal'],
+  ['gravidade','Gravidade'],
+  ['probabilidade_recorrencia','Probabilidade de recorrência'],
+  ['profissional_envolvido','Profissional envolvido'],
+  ['profissional_envolvido_2','Profissional envolvido (2ª pessoa)'],
+  ['erro_compartilhado','Erro compartilhado'],
+  ['envolvimento_controladoria_deloitte','Envolvimento controladoria/Deloitte'],
+  ['equipe','Equipe'],
+  ['grupo','Grupo'],
+  ['avaliacao_profissional','Avaliação do profissional'],
+  ['valor_caso','Valor do caso',fmtMoeda],
+  ['valor_prejuizo','Valor estimado do prejuízo',fmtMoeda],
+  ['licao_aprendida','Lição aprendida'],
+  ['medidas_corretivas','Medidas corretivas'],
+  ['responsavel_acompanhamento','Responsável pelo acompanhamento'],
+  ['sugestoes','Sugestões ou comentários'],
+];
+
+function verDetalhe(id){
+  const r = OCORRENCIAS.find(x=>x.id===id);
+  if(!r) return;
+  document.getElementById('modal-body-detalhe').innerHTML = CAMPOS_DETALHE.map(([campo,label,fmt])=>{
+    let v = r[campo];
+    if(fmt && v!==null && v!==undefined && v!=='') v = fmt(v);
+    return `<div class="detail-row"><div class="dl">${e(label)}</div><div class="dv">${e(v||'—')}</div></div>`;
+  }).join('');
+  document.getElementById('modal-detalhe').classList.add('show');
+}
+function fecharModal(){ document.getElementById('modal-detalhe').classList.remove('show'); }
+document.getElementById('modal-detalhe').addEventListener('click', ev=>{ if(ev.target.id==='modal-detalhe') fecharModal(); });
+
+function exportarExcel(){
+  const dados = OCORRENCIAS.map(r=>({
+    'Data da Ocorrência': fmtData(r.data_ocorrencia),
+    'Tipo de Ocorrência': r.tipo_ocorrencia,
+    'Tipo de Prazo': r.tipo_prazo,
+    'Descrição': r.descricao,
+    'Data da Identificação': fmtData(r.data_identificacao),
+    'Data da Comunicação aos Sócios': fmtData(r.data_comunicacao_socios),
+    'Relato da Identificação': r.relato_identificacao,
+    'Fator Contribuinte': r.fator_contribuinte,
+    'Gravidade': r.gravidade,
+    'Probabilidade de Recorrência': r.probabilidade_recorrencia,
+    'Profissional Envolvido': r.profissional_envolvido,
+    'Profissional Envolvido (2ª pessoa)': r.profissional_envolvido_2,
+    'Erro Compartilhado': r.erro_compartilhado,
+    'Envolvimento Controladoria/Deloitte': r.envolvimento_controladoria_deloitte,
+    'Equipe': r.equipe,
+    'Grupo': r.grupo,
+    'Avaliação do Profissional': r.avaliacao_profissional,
+    'Valor do Caso': r.valor_caso,
+    'Valor Estimado do Prejuízo': r.valor_prejuizo,
+    'Lição Aprendida': r.licao_aprendida,
+    'Medidas Corretivas': r.medidas_corretivas,
+    'Responsável pelo Acompanhamento': r.responsavel_acompanhamento,
+    'Sugestões/Comentários': r.sugestoes,
+    'Preenchido por': r.preenchido_por,
+    'Notificação Poliana': r.notificado_poliana ? 'Enviada' : 'Pendente',
+  }));
+  const ws = XLSX.utils.json_to_sheet(dados);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Incidências');
+  XLSX.writeFile(wb, `Controle_Incidencias_${new Date().toISOString().slice(0,10)}.xlsx`);
+}
+
+function assinarRealtime(){
+  getClient().channel('controle_incidencias_changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: TABLE }, () => { if(document.getElementById('view-lista').style.display!=='none') carregar(); })
+    .subscribe();
+}
+assinarRealtime();
+</script>
+</body>
+</html>
