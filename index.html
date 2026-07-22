@@ -210,7 +210,12 @@ td.mono{font-family:var(--mono);font-size:11px;color:var(--muted);white-space:no
                 <option>Recurso de Revista</option>
                 <option>Contestação</option>
                 <option>Contrarrazões</option>
+                <option value="Outro">Outro…</option>
               </select>
+            </div>
+            <div class="mc-form-group" id="wrap-tipo-prazo-outro" style="display:none;">
+              <label>Descreva o tipo de prazo <span class="req">*</span></label>
+              <input type="text" id="f-tipo-prazo-outro" placeholder="Digite o que seria a mais">
             </div>
           </div>
 
@@ -483,6 +488,9 @@ function abrirEmailAlertaIncidencia(p){
 document.getElementById('f-tipo-ocorrencia').addEventListener('change', (ev)=>{
   document.getElementById('wrap-tipo-ocorrencia-outro').style.display = ev.target.value==='Outro' ? '' : 'none';
 });
+document.getElementById('f-tipo-prazo').addEventListener('change', (ev)=>{
+  document.getElementById('wrap-tipo-prazo-outro').style.display = ev.target.value==='Outro' ? '' : 'none';
+});
 
 document.getElementById('form-incidencia').addEventListener('submit', async (ev)=>{
   ev.preventDefault();
@@ -492,12 +500,17 @@ document.getElementById('form-incidencia').addEventListener('submit', async (ev)
     document.getElementById('f-tipo-ocorrencia-outro').focus();
     return;
   }
+  const tipoPrazoSel = document.getElementById('f-tipo-prazo').value;
+  if(tipoPrazoSel==='Outro' && !document.getElementById('f-tipo-prazo-outro').value.trim()){
+    document.getElementById('f-tipo-prazo-outro').focus();
+    return;
+  }
   btn.disabled = true; btn.textContent = 'Enviando…';
 
   const payload = {
     preenchido_por: document.getElementById('f-preenchido-por').value.trim(),
     tipo_ocorrencia: tipoSel==='Outro' ? document.getElementById('f-tipo-ocorrencia-outro').value.trim() : tipoSel,
-    tipo_prazo: document.getElementById('f-tipo-prazo').value || null,
+    tipo_prazo: tipoPrazoSel==='Outro' ? document.getElementById('f-tipo-prazo-outro').value.trim() : (tipoPrazoSel || null),
     data_ocorrencia: document.getElementById('f-data-ocorrencia').value || null,
     descricao: document.getElementById('f-descricao').value.trim(),
     data_identificacao: document.getElementById('f-data-identificacao').value || null,
@@ -533,6 +546,7 @@ document.getElementById('form-incidencia').addEventListener('submit', async (ev)
   document.getElementById('erro-conexao').innerHTML = '';
   ev.target.reset();
   document.getElementById('wrap-tipo-ocorrencia-outro').style.display = 'none';
+  document.getElementById('wrap-tipo-prazo-outro').style.display = 'none';
   document.querySelector('input[name="f-compartilhado"][value="Não"]').checked = true;
   toast('✅ Ocorrência registrada — abrindo e-mail para a Poliana…');
   abrirEmailAlertaIncidencia(payload);
